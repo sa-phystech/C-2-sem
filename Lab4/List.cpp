@@ -1,3 +1,4 @@
+
 #include <iostream>
 
 struct element
@@ -90,6 +91,41 @@ void Clear(List * list)
       tmp = tmp->next;
       delete tmp1;
    }
+
+}
+
+void add_i(int n, int val, List * list)
+{
+    element * tmp1;
+    element *tmp = (element*)malloc(sizeof(element));
+    tmp->value = val;
+    tmp1->next = list->head;
+    for(int i = 0; i < n-1; i++)
+    {
+        tmp1 = tmp1->next;
+    }
+    if (tmp1->next != NULL)
+    {
+        tmp->next=tmp1->next;
+    }
+    else
+    {
+        tmp->next = NULL;
+    }
+    tmp1->next = tmp;
+    list->length += 1;
+}
+
+List* merge(List * list1, List * list2)
+{
+    element * tmp;
+    tmp = list1->head;
+    while(tmp->next != NULL)
+    {
+        tmp = tmp->next;
+    }
+    tmp->next = list2->head;
+    return list1;
 }
 
 int main() {
@@ -99,8 +135,13 @@ int main() {
     add_to_begin(2, list1);
     add_to_begin(3, list1);
     add_to_end(1, list1);
+    add_to_end(22, list1);
     print_list(list1);
-    Clear(list1);
-    print_list(list1);
+    List * list2 = new List();
+    list2 = copy_list(list1);
+    print_list(list2);
+    List * list3 = new List();
+    list3 = merge(list1, list2);
+    print_list(list3);
     return 0;
 }
