@@ -3,195 +3,191 @@
 struct node
 {
     int value;
-    node *left;
-    node *right;
-};
-struct tree
-{
-    node* root;
+    node* right;
+    node* left;
+    unsigned char height;
+    node(int val) { value=val; height=1; left=right=nullptr; }
 };
 
-tree* create_empty()
+unsigned char h(node* tree)
 {
-    tree* tr = new tree();
-    tr->root = nullptr;
-    return tr;
+    return tree?tree->height:0;
 }
 
-node* add_value(node* res, int val)
+int bfactor(node* tree)
 {
-    if (res == nullptr)
+    return h(tree->right)-h(tree->left);
+}
+
+void fixheight(node* tree)
+{
+    unsigned char hl = h(tree->left);
+    unsigned char hr = h(tree->right);
+    tree->height = (hl>hr?hl:hr) + 1;
+}
+
+node* rotateright(node* tree)
+{
+    node* tmp =tree->left;
+    tree->left = tmp->right;
+    tmp->right = tree;
+    fixheight(tree);
+    fixheight(tmp);
+    return tmp;
+}
+
+node* rotateleft(node* tree)
+{
+    node* tmp =tree->right;
+    tree->right = tmp->left;
+    tmp->left = tree;
+    fixheight(tree);
+    fixheight(tmp);
+    return tmp;
+}
+
+node* balance(node* tree)
+{
+    fixheight(tree);
+    if(bfactor(tree)==2)
     {
-    res = new node;
-    res->value = val;
-    res->left = nullptr;
-    res->right = nullptr;
+        if( bfactor(tree->right)<0)
+            tree->right = rotateright(tree->right);
+        return rotateleft(tree);
     }
-    else if(val < res->value)
+    if (bfactor(tree)==-2)
     {
-        res->left = add_value(res->left, val);
+        if (bfactor(tree->left)>0)
+            tree->left = rotateleft(tree->left);
+        return rotateright(tree);
+    }
+    return tree;
+}
+
+node* add(node* tree, int val)
+{
+    if (!tree) return new node(val);
+    if(val < tree->value)
+    {
+        tree->left = add(tree->left, val);
     }
     else
     {
-        res->right = add_value(res->right, val);
+        tree->right = add(tree->right, val);
     }
-    return res;
+    return balance(tree);
 }
 
-node* find_value(tree* tr, int val)
+node* findmin(node* tree)
 {
-    node* tmp;
-    tmp = tr->root;
-    while ((tmp->left != nullptr)&&(tmp->right != nullptr)){
-    if(tmp->value != val)
-    {
-        if(val < tmp->value)
-        {
-            tmp = tmp->left;
-        }
-        else if (tmp->value == val)
-        {
-            return tmp;
-        }
-        else
-        {
-            tmp = tmp->right;
-        }
-
-    }}
+    return tree->left?findmin(tree->left):tree;
 }
 
-void pre_order(node* element)
+node* removemin(node* tree)
 {
-    if (element!= nullptr)
+    if(tree->left == nullptr)
+        return tree->right;
+    tree->left = removemin(tree->left);
+    return balance (tree);
+}
+
+node* removenode(node* tree, int val)
+{
+    if (!tree) return nullptr;
+    if(val < tree->value)
+        tree->left = removenode(tree->left, val);
+    else if (val > tree->value)
+        tree->right = removenode(tree->right, val);
+    else
     {
-        std::cout << element->value << ' ' << std::endl;
-        pre_order(element->left);
-        pre_order(element->right);
+        node* l = tree->left;
+        node* r = tree->right;
+        delete tree;
+        if (!r) return l;
+        node* minimum = findmin(r);
+        minimum->right = removemin(r);
+        minimum->left = l;
+        return balance(minimum);
     }
-
+    return balance(tree);
 }
 
-void inf_order(node* element)
+node* find_value(node* tree, int val)
 {
-    if (element!= nullptr)
+    if ((tree == nullptr)||(tree->value == val))
+        return tree;
+    if (val < tree->value)
     {
-        inf_order(element->left);
-        std::cout << element->value << ' ' << std::endl;
-        inf_order(element->right);
+        return find_value(tree->left, val);
     }
-}
-
-void post_order(node* element)
-{
-    if (element!= nullptr)
+    else
     {
-        post_order(element->left);
-        post_order(element->right);
-        std::cout << element->value << ' ' << std::endl;
+        return find_value(tree->right, val);
     }
 }
 
-void find_all_leaves(node* element)
+void find_all_leaves(node* tree)
 {
-
-    if (element != nullptr)
+    if (tree)
     {
-        if ((element->right == nullptr)&&(element->left == nullptr))
-        {
-            std::cout << element->value << ' ' << std::endl;
-        }
-       find_all_leaves(element->left);
-       find_all_leaves(element->right);
+        find_all_leaves(tree->left);
+        if ((!tree->left) && (!tree->right))
+            std::cout << tree->value << std::endl;
+        find_all_leaves(tree->right);
     }
 }
 
-bool find_value(node* element, int val)
+void inf_order(node* tree)
 {
-    bool result;
-    if (element != nullptr)
+    if (tree!= nullptr)
     {
-        result = false;
-        if (element->value == val)
-        {
-            result = true;
-        }
-        if (result == false)
-        {
-            result = find_value(element->left, val);
-        }
-        if (result == false)
-        {
-            result = find_value(element->right, val);
-        }
+        inf_order(tree->left);
+        std::cout << tree->value << std::endl;
+        inf_order(tree->right);
     }
-    return result;
 }
 
-int rightmost(node* element)
+void post_order(node* tree)
 {
-    while (element->right != nullptr)
+    if (tree!= nullptr)
     {
-        element = element->right;
+        post_order(tree->left);
+        post_order(tree->right);
+        std::cout << tree->value << std::endl;
     }
-    return element->value;
 }
 
-node* remove_by_value(node* element, int val)
+void pre_order(node* tree)
 {
-   if (element == nullptr)
-   {
-       return element;
-   }
-   if (element->value == val)
-   {
-       if ((element->left == nullptr)&&(element->right == nullptr))
-       {
-           delete element;
-           return nullptr;
-       }
-       if ((element->right == nullptr)&&(element->left != nullptr))
-       {
-           node* temp = element->left;
-           delete element;
-           return temp;
-       }
-       if ((element->right != nullptr)&&(element->left == nullptr))
-       {
-           node* temp = element->right;
-           delete element;
-           return temp;
-       }
-       element->value = rightmost(element->left);
-       element->left = remove_by_value(element->left, element->value);
-       return element;
-   }
-   if (val < element->value)
-   {
-       element->left = remove_by_value(element->left, val);
-       return element;
-   }
-   if ( val > element->value)
-   {
-       element->right = remove_by_value(element->right, val);
-       return element;
-   }
-   return element;
+    if (tree!= nullptr)
+    {
+        std::cout << tree->value << std::endl;
+        pre_order(tree->left);
+        pre_order(tree->right);
+    }
 }
-
 
 int main()
 {
-    tree* tree1 = new tree();
-    tree1 = create_empty();
-    for (int i = 0; i < 10; i++)
+    node* root = new node(3);
+    std::cout << root->value << std::endl;
+    std::cout << std::endl;
+    for (int i = 0; i < 12; i++)
     {
-        tree1->root = add_value(tree1->root, 1 + rand() % 35);
+        int a = rand() % 76 + 34;
+        root = add(root, a);
+        std::cout << a << ' ';
     }
-    pre_order(tree1->root);
     std::cout << std::endl;
-    find_all_leaves(tree1->root);
+    inf_order(root);
     std::cout << std::endl;
-    std::cout << find_value(tree1->root, 13) << std::endl;
+    std::cout << std::endl;
+    std::cout << find_value(root, 37) << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << root->value << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    find_all_leaves(root);
     return 0;
 }
